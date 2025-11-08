@@ -32,10 +32,4 @@ jobs:
         with:
           name: bot-output
           path: out/
-          on:
-  push:
-    branches: [ main, master ]
-  pull_request:
-  schedule:
-    - cron: "0 6 * * *"   # chaque jour à 06:00 UTC
 
