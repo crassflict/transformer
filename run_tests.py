@@ -1,14 +1,11 @@
 import os
-from main import run_once
+from train_rl import train_and_signal
 
-def test_smoke():
-    # Test fumée: télécharge des données, calcule indicateurs, écrit latest.json
-    os.environ["OUTPUT_DIR"] = "out"
-    sig = run_once()
-    assert sig["action"] in ("buy","flat")
-    assert os.path.exists("out/latest.json")
-    assert os.path.exists("out/report.csv")
+os.environ["OUTPUT_DIR"] = "out"
+os.environ["MODEL_DIR"]  = "models"
 
-if __name__ == "__main__":
-    test_smoke()
-    print("OK: smoke test passed.")
+sig = train_and_signal()
+assert sig["action"] in ("buy","sell","flat")
+assert os.path.exists("out/latest.json")
+assert os.path.exists("models/ppo_mnq.zip")
+print("OK: RL smoke test passed.")
