@@ -1,0 +1,8 @@
+⚠️ No real data found — generating synthetic dataset.
+✅ Loaded previous state: {'ema_fast_p': 35, 'ema_slow_p': 91, 'rsi_buy': 59.0, 'rsi_sell': 39.0}
+==== Simple Nasdaq Bot Report ====
+PnL net (USD): -10413.20
+Trades: 375 | Win rate: 28.80%
+Params finaux -> EMA_fast:46 EMA_slow:74 RSI_buy:66.0 RSI_sell:50.0
+Données: data/mnq_5m.csv (Yahoo) ou data/nq.csv (synthétique)
+💾 Saved state: {'ema_fast_p': 46, 'ema_slow_p': 74, 'rsi_buy': 66.0, 'rsi_sell': 50.0}
