@@ -1,12 +1,12 @@
 # bot.py
-# Nasdaq futures adaptive bot — avec apprentissage et vraies données MNQ (Yahoo Finance)
+# Nasdaq futures adaptive bot — apprend entre les runs et produit un rapport complet
 
 import csv, os, random, math, json
 from datetime import datetime, timedelta, timezone
 
 STATE_FILE = "state.json"
 
-# --- Fonction de persistance d'état (apprentissage entre runs) ---
+# --- Mémoire persistante entre les runs ---
 def load_state(bot):
     if os.path.isfile(STATE_FILE):
         try:
@@ -15,9 +15,9 @@ def load_state(bot):
             bot.ema_slow_p = int(s.get("ema_slow_p", bot.ema_slow_p))
             bot.rsi_buy   = float(s.get("rsi_buy", bot.rsi_buy))
             bot.rsi_sell  = float(s.get("rsi_sell", bot.rsi_sell))
-            print(f"Loaded previous state: {s}")
-        except Exception:
-            pass
+            print(f"✅ Loaded previous state: {s}")
+        except Exception as e:
+            print(f"⚠️ Could not load state: {e}")
 
 def save_state(bot):
     s = {
@@ -27,15 +27,15 @@ def save_state(bot):
         "rsi_sell": bot.rsi_sell,
     }
     json.dump(s, open(STATE_FILE, "w"))
-    print(f"Saved state: {s}")
+    print(f"💾 Saved state: {s}")
 
-# --- Paramètres marché ---
+# --- Paramètres du contrat (MNQ) ---
 TICK_SIZE = 0.25
 TICK_VALUE = 5.0
 COMM_PER_SIDE = 2.5
 SLIPPAGE_TICKS = 0.5
 
-# --- Utilitaires ---
+# --- Utilitaires mathématiques ---
 def points_to_usd(points):
     ticks = points / TICK_SIZE
     return ticks * TICK_VALUE
@@ -60,3 +60,5 @@ def load_csv(path):
     out = []
     with open(path, newline="") as f:
         r = csv.DictReader(f)
+        for row in r:
+            ts = row["timestamp"]
