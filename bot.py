@@ -8,6 +8,30 @@
 import csv, os, random, math
 from datetime import datetime, timedelta, timezone
 
+import json, os
+
+STATE_FILE = "state.json"
+
+def load_state(bot):
+    if os.path.isfile(STATE_FILE):
+        try:
+            s = json.load(open(STATE_FILE))
+            bot.ema_fast_p = int(s.get("ema_fast_p", bot.ema_fast_p))
+            bot.ema_slow_p = int(s.get("ema_slow_p", bot.ema_slow_p))
+            bot.rsi_buy   = float(s.get("rsi_buy", bot.rsi_buy))
+            bot.rsi_sell  = float(s.get("rsi_sell", bot.rsi_sell))
+        except Exception:
+            pass
+
+def save_state(bot):
+    s = {
+        "ema_fast_p": bot.ema_fast_p,
+        "ema_slow_p": bot.ema_slow_p,
+        "rsi_buy": bot.rsi_buy,
+        "rsi_sell": bot.rsi_sell,
+    }
+    json.dump(s, open(STATE_FILE, "w"))
+
 # -----------------------
 # Config "contrat" (NQ)
 # -----------------------
