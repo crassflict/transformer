@@ -1,0 +1,5 @@
+==== Simple Nasdaq Bot Report ====
+PnL net (USD): -11785.26
+Trades: 420 | Win rate: 32.86%
+Params finaux -> EMA_fast:47 EMA_slow:81 RSI_buy:50.0 RSI_sell:33.0
+Données: data/nq.csv (générées si absent)
