@@ -1,66 +1,60 @@
-# update_readme.py — met à jour README.md avec le dernier résumé du bot
+# update_readme.py
+# Met à jour le README.md avec les infos du dernier run (multi-indicateurs)
 import json, os, datetime
-
-SUMMARY_PATH = "out/summary.json"
-README_PATH = "README.md"
-
-START = "<!-- BOT-SUMMARY:START -->"
-END   = "<!-- BOT-SUMMARY:END -->"
-
-def load_summary():
-    if not os.path.isfile(SUMMARY_PATH):
-        return None
-    with open(SUMMARY_PATH, "r", encoding="utf-8") as f:
-        return json.load(f)
 
 def render_block(s):
     lines = []
-    lines.append(START)
+    lines.append("🤖 **Dernier run du bot multi-indicateurs**\n")
+    lines.append(f"- **Horodatage (UTC)** : `{s['ts']}`")
+    lines.append(f"- **PnL net (USD)** : `${s['pnl_usd']}`")
+    lines.append(f"- **Trades** : {s['trades']}")
+    lines.append(f"- **Win rate** : {s['winrate_pct']}%")
     lines.append("")
-    lines.append("## 🤖 Dernier run du bot")
+    lines.append("| Indicateur | Valeur |")
+    lines.append("|:-----------|-------:|")
+    lines.append(f"| EMA 9 | {s['ema9']} |")
+    lines.append(f"| EMA 21 | {s['ema21']} |")
+    lines.append(f"| SMA 50 | {s['sma50']} |")
+    lines.append(f"| SMA 200 | {s['sma200']} |")
+    lines.append(f"| RSI len | {s['rsi_len']} |")
+    lines.append(f"| MACD (fast, slow, signal) | {s['macd']} |")
+    lines.append(f"| VWAP window | {s['vwap_win']} |")
+    lines.append(f"| Volume MA window | {s['vma_win']} |")
+    lines.append(f"| Volume Profile window | {s['vp_win']} |")
     lines.append("")
-    lines.append(f"- **Horodatage (UTC)**: `{s['ts']}`")
-    lines.append(f"- **PnL net**: **${s['pnl_usd']:.2f}**")
-    lines.append(f"- **Trades**: **{s['trades']}**")
-    lines.append(f"- **Win rate**: **{s['winrate_pct']:.2f}%**")
-    lines.append("")
-    lines.append("| Paramètre | Valeur |")
-    lines.append("|---|---:|")
-    lines.append(f"| EMA rapide | {s['ema_fast']} |")
-    lines.append(f"| EMA lente | {s['ema_slow']} |")
-    lines.append(f"| RSI buy | {s['rsi_buy']:.1f} |")
-    lines.append(f"| RSI sell | {s['rsi_sell']:.1f} |")
-    lines.append("")
-    lines.append(f"_Source des données_: `{s['data_source']}`")
-    lines.append("")
-    lines.append(END)
-    lines.append("")
+    lines.append(f"_Source des données :_ `{s['data_source']}`")
     return "\n".join(lines)
 
-def insert_or_replace_block(readme, block):
-    if START in readme and END in readme:
-        head = readme.split(START)[0]
-        tail = readme.split(END)[1]
-        return head + block + tail
-    else:
-        # Ajoute en haut si pas de bloc
-        return block + "\n" + readme
-
 def main():
-    s = load_summary()
-    if not s:
-        print("No summary.json yet; skip README update.")
+    if not os.path.exists("out/summary.json"):
+        print("No summary.json found, skipping README update.")
         return
-    if os.path.isfile(README_PATH):
-        with open(README_PATH, "r", encoding="utf-8") as f:
-            readme = f.read()
-    else:
-        readme = "# transformer\n\n"
+
+    s = json.load(open("out/summary.json", "r"))
     block = render_block(s)
-    new_readme = insert_or_replace_block(readme, block)
-    with open(README_PATH, "w", encoding="utf-8") as f:
-        f.write(new_readme)
-    print("README.md updated.")
+
+    readme = "README.md"
+    if os.path.exists(readme):
+        txt = open(readme, "r", encoding="utf-8").read()
+    else:
+        txt = ""
+
+    new = []
+    replaced = False
+    for line in txt.splitlines():
+        if line.strip().startswith("🤖 **Dernier run"):
+            replaced = True
+            break
+        new.append(line)
+
+    if replaced:
+        newtxt = "\n".join(new) + "\n" + block + "\n"
+    else:
+        newtxt = block + "\n\n" + txt
+
+    with open(readme, "w", encoding="utf-8") as f:
+        f.write(newtxt)
+    print("✅ README.md updated.")
 
 if __name__ == "__main__":
     main()
