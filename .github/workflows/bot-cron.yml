@@ -39,12 +39,14 @@ jobs:
 
       - name: Commit results (state + logs + data)
         run: |
-          if [ -n "$(git status --porcelain)" ]; then
-            git config user.name "github-actions[bot]"
-            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-            git add state.json out/ data/ || true
+          set -e
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          if git diff --cached --quiet; then
+            echo "No changes to commit."
+          else
             git commit -m "bot run $(date -u +'%Y-%m-%dT%H:%M:%SZ')"
             git push
-          else
-            echo "No changes to commit."
           fi
+
