@@ -3,7 +3,7 @@ name: Run bot daily
 on:
   workflow_dispatch:
   schedule:
-    - cron: "15 13 * * *"   # 08:15 Québec (hiver), ajuste si tu veux
+    - cron: "15 13 * * *"   # 08:15 Québec (hiver)
 
 permissions:
   contents: write
@@ -19,25 +19,20 @@ jobs:
         with:
           python-version: "3.10"
 
-      # 1) Installer yfinance pour le fetch (le bot lui-même reste zéro-dépendance)
-      - name: Install fetch deps
+      - name: Install fetch dependencies
         run: |
           python -m pip install --upgrade pip
           pip install yfinance pandas
 
-      # 2) Télécharger MNQ=F au format CSV 5m / 60 jours
       - name: Fetch MNQ=F data (5m)
         run: |
           python fetch_mnq.py
 
-      # 3) Lancer le bot avec vraie data si dispo, sinon il générera sa synthétique
       - name: Run bot and save output
         run: |
           mkdir -p out
-          # change bot pour lire d'abord data/mnq_5m.csv si présent (voir note ci-dessous)
           python bot.py | tee out/run_$(date -u +'%Y%m%dT%H%M%SZ').txt
 
-      # 4) Commit state.json + out/ + data/ (pour garder la mémoire et les logs)
       - name: Commit results
         run: |
           if [ -n "$(git status --porcelain)" ]; then
