@@ -1,8 +1,9 @@
-# update_readme.py
-# Met à jour le README.md avec les infos du dernier run (multi-indicateurs)
-import json, os, datetime
+# update_readme.py — met à jour README.md avec le dernier résumé + le graphique PnL
+import json, os
 
-def render_block(s):
+IMG_PATH = "out/performance.png"
+
+def render_block(s, has_img):
     lines = []
     lines.append("🤖 **Dernier run du bot multi-indicateurs**\n")
     lines.append(f"- **Horodatage (UTC)** : `{s['ts']}`")
@@ -10,6 +11,10 @@ def render_block(s):
     lines.append(f"- **Trades** : {s['trades']}")
     lines.append(f"- **Win rate** : {s['winrate_pct']}%")
     lines.append("")
+    if has_img:
+        # afficher l’image (equity curve)
+        lines.append("![Évolution du PnL](out/performance.png)")
+        lines.append("")
     lines.append("| Indicateur | Valeur |")
     lines.append("|:-----------|-------:|")
     lines.append(f"| EMA 9 | {s['ema9']} |")
@@ -29,31 +34,32 @@ def main():
     if not os.path.exists("out/summary.json"):
         print("No summary.json found, skipping README update.")
         return
-
-    s = json.load(open("out/summary.json", "r"))
-    block = render_block(s)
+    s = json.load(open("out/summary.json", "r", encoding="utf-8"))
+    has_img = os.path.exists(IMG_PATH)
+    block = render_block(s, has_img)
 
     readme = "README.md"
-    if os.path.exists(readme):
-        txt = open(readme, "r", encoding="utf-8").read()
-    else:
-        txt = ""
+    txt = open(readme, "r", encoding="utf-8").read() if os.path.exists(readme) else ""
 
-    new = []
-    replaced = False
-    for line in txt.splitlines():
-        if line.strip().startswith("🤖 **Dernier run"):
-            replaced = True
+    # Remplace la première section existante "Dernier run du bot multi-indicateurs"
+    lines = txt.splitlines()
+    start = None
+    for i, line in enumerate(lines):
+        if line.strip().startswith("🤖 **Dernier run du bot multi-indicateurs**"):
+            start = i
             break
-        new.append(line)
 
-    if replaced:
-        newtxt = "\n".join(new) + "\n" + block + "\n"
+    if start is not None:
+        # garder ce qui est avant, remplacer la section entière jusqu'à une ligne vide suivie d'un titre ou EOF
+        new = lines[:start]
+        new.append(block)
+        new.append("")  # une ligne vide
+        txt = "\n".join(new)
     else:
-        newtxt = block + "\n\n" + txt
+        txt = block + "\n\n" + txt
 
     with open(readme, "w", encoding="utf-8") as f:
-        f.write(newtxt)
+        f.write(txt)
     print("✅ README.md updated.")
 
 if __name__ == "__main__":
