@@ -1,0 +1,11 @@
+✅ Found real MNQ=F data (data/mnq_5m.csv)
+✅ Loaded state: {'ema_fast_p': 106, 'ema_slow_p': 108, 'rsi_buy': 59.0, 'rsi_sell': 38.0}
+==== Simple Nasdaq Bot Report ====
+PnL net (USD): -810090.00
+Trades: 832 | Win rate: 23.80%
+Params -> EMA9:9 EMA21:21 SMA50:50 SMA200:200 RSI:14
+MACD(12,26,9) VMA:20 VWAP_win:145 VP_win:70
+Weights -> trend:2.15 macd:1.75 rsi:0.30 vol:2.50 vwap:0.40 poc:0.70 mtf:0.45
+Thresholds -> enter:0.80 exit:0.40
+Données: data/mnq_5m.csv
+💾 Saved state: {'ema_fast': 9, 'ema_mid': 21, 'sma50_win': 50, 'sma200_win': 200, 'rsi_len': 14, 'macd_fast': 12, 'macd_slow': 26, 'macd_signal': 9, 'vma_win': 20, 'vwap_win': 145, 'vp_win': 70, 'delta_win': 300, 'w_macd': 1.7500000000000004, 'w_trend': 2.15, 'w_rsi': 0.30000000000000004, 'w_vol': 2.5, 'w_vwap': 0.4000000000000005, 'w_poc': 0.6999999999999997, 'w_mtf': 0.4500000000000001, 'score_enter': 0.8, 'score_exit': 0.39999999999999997}

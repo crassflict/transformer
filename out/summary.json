@@ -1,11 +1,33 @@
 {
-  "ts": "20251112T015005Z",
-  "pnl_usd": 1070.0,
-  "trades": 67,
-  "winrate_pct": 34.33,
-  "ema_fast": 106,
-  "ema_slow": 108,
-  "rsi_buy": 59.0,
-  "rsi_sell": 38.0,
+  "ts": "20251112T022237Z",
+  "pnl_usd": -810090.0,
+  "trades": 832,
+  "winrate_pct": 23.8,
+  "ema9": 9,
+  "ema21": 21,
+  "sma50": 50,
+  "sma200": 200,
+  "rsi_len": 14,
+  "macd": [
+    12,
+    26,
+    9
+  ],
+  "vma_win": 20,
+  "vwap_win": 145,
+  "vp_win": 70,
+  "weights": {
+    "trend": 2.15,
+    "macd": 1.7500000000000004,
+    "rsi": 0.30000000000000004,
+    "vol": 2.5,
+    "vwap": 0.4000000000000005,
+    "poc": 0.6999999999999997,
+    "mtf": 0.4500000000000001
+  },
+  "thresholds": {
+    "enter": 0.8,
+    "exit": 0.39999999999999997
+  },
   "data_source": "data/mnq_5m.csv"
 }
