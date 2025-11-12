@@ -1,11 +1,11 @@
 {
-  "ts": "20251112T013641Z",
-  "pnl_usd": -5417.74,
-  "trades": 364,
-  "winrate_pct": 31.04,
-  "ema_fast": 82,
-  "ema_slow": 95,
-  "rsi_buy": 60.0,
-  "rsi_sell": 34.0,
-  "data_source": "data/nq.csv"
+  "ts": "20251112T015005Z",
+  "pnl_usd": 1070.0,
+  "trades": 67,
+  "winrate_pct": 34.33,
+  "ema_fast": 106,
+  "ema_slow": 108,
+  "rsi_buy": 59.0,
+  "rsi_sell": 38.0,
+  "data_source": "data/mnq_5m.csv"
 }
