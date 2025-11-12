@@ -1,83 +1,97 @@
-# fetch_mnq.py — Télécharge MNQ=F (Micro E-mini Nasdaq 100) sur Yahoo Finance
-# Crée data/mnq_5m.csv pour le bot.
+# fetch_mnq.py — Télécharge MNQ=F (Micro E-mini Nasdaq-100) en 5m via l'API JSON Yahoo directe
+# Écrit data/mnq_5m.csv sans dépendances externes (stdlib only).
 
-import os, sys, time, json
-import pandas as pd
+import os, sys, time, json, math
+from urllib import request, error
+from datetime import datetime, timezone
 
-# Sécurise l'import de yfinance
-try:
-    import yfinance as yf
-except Exception as e:
-    print("❌ yfinance manquant, installer avec pip install yfinance", file=sys.stderr)
-    sys.exit(1)
+OUT_DIR = "data"
+OUT_CSV = os.path.join(OUT_DIR, "mnq_5m.csv")
 
-# Contourne restrictions et caches
-from urllib import request
-request.install_opener(request.build_opener(request.ProxyHandler({})))
-os.environ["USER_AGENT"] = "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
+# Yahoo chart API (même source que yfinance, mais sans la lib)
+URL = "https://query1.finance.yahoo.com/v8/finance/chart/MNQ=F?range=60d&interval=5m&includePrePost=false"
 
-os.makedirs("data", exist_ok=True)
-
-symbol = "MNQ=F"
-interval = "5m"
-period = "60d"
-out_path = "data/mnq_5m.csv"
-
-print(f"📡 Téléchargement Yahoo Finance: {symbol} ({interval}, {period})")
-
-success = False
-for attempt in range(1, 4):
-    try:
-        ticker = yf.Ticker(symbol)
-        df = ticker.history(period=period, interval=interval, auto_adjust=False, prepost=False)
-        if df is not None and not df.empty:
-            success = True
-            break
-        print(f"⚠️ Tentative {attempt}: aucune donnée reçue, retry dans 5s…")
-        time.sleep(5)
-    except Exception as e:
-        print(f"⚠️ Erreur tentative {attempt}: {e}")
-        time.sleep(5)
-
-if not success:
-    print("🚫 Yahoo Finance a refusé ou renvoyé un dataset vide.")
-    sys.exit(2)
-
-# Nettoyage
-df = df.dropna(subset=["Open","High","Low","Close","Volume"]).copy()
-df.reset_index(inplace=True)
-
-time_col = None
-for c in ("Datetime","Date","index"):
-    if c in df.columns:
-        time_col = c
-        break
-if time_col is None:
-    print("❌ Impossible de détecter la colonne de temps", file=sys.stderr)
-    sys.exit(3)
-
-df.rename(columns={
-    time_col:"timestamp",
-    "Open":"open",
-    "High":"high",
-    "Low":"low",
-    "Close":"close",
-    "Volume":"volume"
-}, inplace=True)
-
-df = df[["timestamp","open","high","low","close","volume"]]
-
-df.to_csv(out_path, index=False)
-print(f"✅ Fichier écrit: {out_path} ({len(df)} lignes)")
-print(df.head(3).to_string(index=False))
-
-# Petit JSON résumé (utile dans les logs ou le README)
-meta = {
-    "symbol": symbol,
-    "rows": len(df),
-    "first": str(df['timestamp'].iloc[0]),
-    "last": str(df['timestamp'].iloc[-1])
+HEADERS = {
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
+    "Accept": "application/json, text/plain, */*",
+    "Connection": "keep-alive",
 }
-with open("data/last_fetch.json", "w") as f:
-    json.dump(meta, f, indent=2)
-print(f"📘 Résumé sauvegardé -> data/last_fetch.json")
+
+def fetch_json(url: str, retries: int = 3, sleep_s: int = 5):
+    req = request.Request(url, headers=HEADERS)
+    last_err = None
+    for i in range(1, retries + 1):
+        try:
+            with request.urlopen(req, timeout=20) as resp:
+                if resp.status != 200:
+                    raise RuntimeError(f"HTTP {resp.status}")
+                data = resp.read()
+                return json.loads(data.decode("utf-8"))
+        except Exception as e:
+            last_err = e
+            print(f"⚠️ tentative {i}/{retries} échouée: {e}", file=sys.stderr)
+            time.sleep(sleep_s)
+    raise RuntimeError(f"Échec de téléchargement après {retries} tentatives: {last_err}")
+
+def to_csv(records):
+    os.makedirs(OUT_DIR, exist_ok=True)
+    with open(OUT_CSV, "w", encoding="utf-8") as f:
+        f.write("timestamp,open,high,low,close,volume\n")
+        for r in records:
+            f.write("{},{:.2f},{:.2f},{:.2f},{:.2f},{}\n".format(
+                r["ts"], r["open"], r["high"], r["low"], r["close"], r["volume"]
+            ))
+
+def main():
+    print("📡 Yahoo JSON direct (MNQ=F, 5m, 60d)")
+    j = fetch_json(URL)
+
+    # structure: chart -> result[0] -> timestamp[], indicators -> quote[0] -> open/high/low/close/volume arrays
+    try:
+        res = j["chart"]["result"][0]
+        ts_list = res["timestamp"]
+        quote = res["indicators"]["quote"][0]
+        opens  = quote["open"]
+        highs  = quote["high"]
+        lows   = quote["low"]
+        closes = quote["close"]
+        vols   = quote["volume"]
+    except Exception as e:
+        print("❌ Format de réponse inattendu:", e, file=sys.stderr)
+        sys.exit(2)
+
+    if not ts_list or not opens:
+        print("❌ Données vides dans la réponse Yahoo", file=sys.stderr)
+        sys.exit(3)
+
+    # Assemble records, filtre NaN/None
+    def is_num(x): 
+        return x is not None and not (isinstance(x, float) and math.isnan(x))
+    records = []
+    for i in range(min(len(ts_list), len(opens), len(highs), len(lows), len(closes), len(vols))):
+        o, h, l, c, v = opens[i], highs[i], lows[i], closes[i], vols[i]
+        if not (is_num(o) and is_num(h) and is_num(l) and is_num(c) and v is not None):
+            continue
+        # timestamps Yahoo en epoch seconds UTC
+        ts = datetime.fromtimestamp(ts_list[i], tz=timezone.utc).isoformat()
+        records.append({
+            "ts": ts,
+            "open": float(o),
+            "high": float(h),
+            "low": float(l),
+            "close": float(c),
+            "volume": int(v),
+        })
+
+    if not records:
+        print("❌ Aucun enregistrement utilisable après nettoyage", file=sys.stderr)
+        sys.exit(4)
+
+    to_csv(records)
+    print(f"✅ Écrit {OUT_CSV} ({len(records)} lignes)")
+    # petit aperçu
+    for r in records[:3]:
+        print(r)
+
+if __name__ == "__main__":
+    main()
