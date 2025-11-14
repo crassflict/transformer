@@ -1,0 +1,28 @@
+name: Train XGBoost
+on:
+  workflow_dispatch:
+
+jobs:
+  train:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          pip install pandas numpy pyarrow xgboost scikit-learn joblib
+
+      - name: Run training
+        run: python ml_train_xgboost.py
+
+      - name: Upload model
+        uses: actions/upload-artifact@v3
+        with:
+          name: xgboost-model
+          path: data/model_xgb.json
