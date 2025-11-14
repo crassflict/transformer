@@ -1,9 +1,9 @@
 🤖 **Dernier run du bot multi-indicateurs**
 
-- **Horodatage (UTC)** : `20251113T172209Z`
-- **PnL net (USD)** : `$48740.0`
-- **Trades** : 690
-- **Win rate** : 29.13%
+- **Horodatage (UTC)** : `20251114T135317Z`
+- **PnL net (USD)** : `$87260.0`
+- **Trades** : 438
+- **Win rate** : 31.74%
 
 ![Évolution du PnL](out/performance.png)
 
@@ -15,8 +15,8 @@
 | SMA 200 | 200 |
 | RSI len | 14 |
 | MACD (fast, slow, signal) | [12, 26, 9] |
-| VWAP window | 60 |
+| VWAP window | 130 |
 | Volume MA window | 20 |
-| Volume Profile window | 510 |
+| Volume Profile window | 90 |
 
 _Source des données :_ `data/mnq_5m.csv`
