@@ -1,0 +1,28 @@
+name: Build Dataset
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          pip install pandas numpy scipy pykalman pyarrow
+
+      - name: Run dataset builder
+        run: python ml_build_dataset.py
+
+      - name: Upload dataset
+        uses: actions/upload-artifact@v3
+        with:
+          name: built-dataset
+          path: data/
