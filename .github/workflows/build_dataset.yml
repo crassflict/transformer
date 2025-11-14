@@ -18,7 +18,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          ip install pandas numpy scipy ta pyarrow scikit-learn pykalman
+          pip install pandas numpy scipy ta pyarrow scikit-learn pykalman
 
       - name: Run dataset builder
         run: |
