@@ -1,4 +1,5 @@
 name: Train XGBoost
+
 on:
   workflow_dispatch:
 
@@ -7,22 +8,28 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v3
+      - name: Checkout repo
+        uses: actions/checkout@v4
 
-      - name: Setup Python
-        uses: actions/setup-python@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
         with:
-          python-version: "3.11"
+          python-version: '3.10'
 
       - name: Install dependencies
         run: |
-          pip install pandas numpy pyarrow xgboost scikit-learn joblib
+          python -m pip install --upgrade pip
+          pip install pandas numpy pyarrow scikit-learn xgboost
 
-      - name: Run training
-        run: python ml_train_xgboost.py
+      - name: Run XGBoost training
+        run: |
+          python ml_train_xgboost.py
 
-      - name: Upload model
-        uses: actions/upload-artifact@v3
+      - name: Upload model & report
+        uses: actions/upload-artifact@v4
         with:
           name: xgboost-model
-          path: data/model_xgb.json
+          path: |
+            data/model_xgb.json
+            data/feature_list.json
+            data/xgb_report.txt
