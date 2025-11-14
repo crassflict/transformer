@@ -19,7 +19,11 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install pandas numpy pyarrow scikit-learn xgboost
+          pip install pandas numpy scipy ta pyarrow scikit-learn pykalman xgboost
+
+      - name: Build dataset (features + labels)
+        run: |
+          python ml_build_dataset.py
 
       - name: Run XGBoost training
         run: |
