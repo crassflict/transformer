@@ -1,0 +1,33 @@
+name: Build Dataset
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Install dependencies
+        run: |
+          pip install pandas numpy scipy ta pyarrow scikit-learn pykalman
+
+      - name: Run dataset builder
+        run: |
+          python ml_build_dataset.py
+
+      - name: Upload dataset artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: dataset
+          path: |
+            data/dataset_features.parquet
+            data/dataset_labels.parquet
