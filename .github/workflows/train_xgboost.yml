@@ -9,25 +9,32 @@ jobs:
 
     steps:
       - name: Checkout repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
-          python-version: '3.10'
+          python-version: "3.10"
 
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install pandas numpy scikit-learn pyarrow ta joblib pykalman xgboost
+          pip install pandas numpy pyarrow scikit-learn xgboost
 
-      - name: Run training script
-        run: python ml_train_xgboost.py
+      - name: Build dataset
+        run: |
+          python ml_build_dataset.py
 
-      - name: Upload trained model
+      - name: Train XGBoost
+        run: |
+          python ml_train_xgboost.py
+
+      - name: Upload model & report
         uses: actions/upload-artifact@v4
         with:
-          name: xgboost-model
+          name: xgboost-model-and-report
           path: |
-            model_xgb.json
-            xgb_report.txt
+            data/model_xgb.json
+            data/xgb_report.txt
+            data/dataset_features.parquet
+            data/dataset_labels.parquet
