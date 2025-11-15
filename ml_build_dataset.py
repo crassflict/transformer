@@ -1,76 +1,85 @@
-import json
-from pathlib import Path
+# ml_build_dataset.py
 
 import pandas as pd
+from pathlib import Path
+from features import FEATURE_COLUMNS, LABEL_COLUMN
 
-from features import add_features, FEATURE_COLUMNS, LABEL_COLUMN
-
-DATA_DIR = Path("data")
-RAW_CSV = DATA_DIR / "mnq_5m.csv"
-OUT_FEATURES = DATA_DIR / "dataset_features.parquet"
-OUT_LABELS = DATA_DIR / "dataset_labels.parquet"
-OUT_FEATURE_LIST = DATA_DIR / "feature_list.json"
+RAW_FILE = Path("data/mnq_5m.csv")          # ton historique 5 min
+FEATURES_FILE = Path("data/dataset_features.parquet")
+LABELS_FILE = Path("data/dataset_labels.parquet")
 
 
-def load_raw_data(path: Path) -> pd.DataFrame:
-    print(f"Loading raw data from {path}...")
-    df = pd.read_csv(path)
+def compute_rsi(series: pd.Series, period: int = 14) -> pd.Series:
+    delta = series.diff()
 
-    for col in ["timestamp", "time", "datetime", "DateTime", "date"]:
-        if col in df.columns:
-            df["timestamp"] = pd.to_datetime(df[col])
-            break
+    gain = delta.where(delta > 0, 0.0)
+    loss = -delta.where(delta < 0, 0.0)
 
-    if "close" not in df.columns:
-        for c in ["Close", "CLOSE", "ClosePrice", "last"]:
-            if c in df.columns:
-                df["close"] = df[c]
-                break
+    avg_gain = gain.rolling(window=period, min_periods=period).mean()
+    avg_loss = loss.rolling(window=period, min_periods=period).mean()
 
-    if "close" not in df.columns:
-        raise ValueError("Impossible de trouver une colonne 'close' dans le CSV.")
+    rs = avg_gain / avg_loss
+    rsi = 100 - (100 / (1 + rs))
 
-    if "volume" not in df.columns:
-        for c in ["Volume", "VOL", "vol"]:
-            if c in df.columns:
-                df["volume"] = df[c]
-                break
-
-    if "volume" not in df.columns:
-        print("Avertissement : pas de colonne volume trouvée, remplie à 0.")
-        df["volume"] = 0.0
-
-    return df
+    return rsi
 
 
-def main() -> None:
-    df_raw = load_raw_data(RAW_CSV)
+def main():
+    print(f"Loading raw data from {RAW_FILE} ...")
+    df = pd.read_csv(RAW_FILE)
 
-    print("Building features with Option B (Kalman, Savgol, etc.)...")
-    df_feat = add_features(df_raw)
+    # Assure-toi que les colonnes existent dans ton CSV
+    # (ajuste les noms si besoin)
+    # On suppose: time, open, high, low, close, volume
+    if "time" in df.columns:
+        df["time"] = pd.to_datetime(df["time"])
+        df = df.sort_values("time").reset_index(drop=True)
 
-    print(f"Resulting dataset shape: {df_feat.shape}")
-    print(df_feat.head())
+    # ====== BASE ======
+    df["close"] = df["close"].astype(float)
+    df["volume"] = df["volume"].astype(float)
 
-    features = df_feat[FEATURE_COLUMNS].copy()
-    labels = df_feat[[LABEL_COLUMN]].copy()
+    # EMA rapides / lentes
+    df["ema_fast"] = df["close"].ewm(span=9, adjust=False).mean()
+    df["ema_slow"] = df["close"].ewm(span=21, adjust=False).mean()
 
-    print(f"Saving features to {OUT_FEATURES} ...")
-    DATA_DIR.mkdir(parents=True, exist_ok=True)
-    features.to_parquet(OUT_FEATURES, index=False)
+    # Lags de prix
+    df["lag_1"] = df["close"].shift(1)
+    df["lag_2"] = df["close"].shift(2)
+    df["lag_3"] = df["close"].shift(3)
 
-    print(f"Saving labels to {OUT_LABELS} ...")
-    labels.to_parquet(OUT_LABELS, index=False)
+    # Returns
+    df["ret_1"] = df["close"].pct_change(1)
+    df["ret_5"] = df["close"].pct_change(5)
 
-    print(f"Saving feature list to {OUT_FEATURE_LIST} ...")
-    feature_info = {
-        "features": FEATURE_COLUMNS,
-        "label": LABEL_COLUMN,
-    }
-    with OUT_FEATURE_LIST.open("w", encoding="utf-8") as f:
-        json.dump(feature_info, f, indent=2)
+    # RSI
+    df["rsi"] = compute_rsi(df["close"], period=14)
 
-    print("Dataset build DONE.")
+    # ====== LABEL ======
+    # 1 si la prochaine bougie monte, sinon 0
+    df[LABEL_COLUMN] = (df["close"].shift(-1) > df["close"]).astype(int)
+
+    # On enlève les lignes qui ont des NaN (lags, RSI, returns)
+    df = df.dropna().reset_index(drop=True)
+
+    # Vérification que toutes les colonnes existent bien
+    missing = [c for c in FEATURE_COLUMNS if c not in df.columns]
+    if missing:
+        raise ValueError(f"Colonnes manquantes dans le dataframe final: {missing}")
+
+    X = df[FEATURE_COLUMNS]
+    y = df[LABEL_COLUMN]
+
+    FEATURES_FILE.parent.mkdir(parents=True, exist_ok=True)
+
+    print(f"Saving features to {FEATURES_FILE} ...")
+    X.to_parquet(FEATURES_FILE, index=False)
+
+    print(f"Saving labels to {LABELS_FILE} ...")
+    y.to_frame(name=LABEL_COLUMN).to_parquet(LABELS_FILE, index=False)
+
+    print("Dataset build completed.")
+    print(f"Features shape: {X.shape}, labels shape: {y.shape}")
 
 
 if __name__ == "__main__":
