@@ -1,0 +1,14 @@
+{
+  "ema_fast": 9,
+  "ema_slow": 21,
+  "sma_50": 50,
+  "sma_200": 200,
+  "rsi_len": 14,
+  "rsi_buy": 60,
+  "rsi_sell": 40,
+  "macd_fast": 12,
+  "macd_slow": 26,
+  "macd_signal": 9,
+  "vwap_window": 145,
+  "volume_ma_window": 20
+}
