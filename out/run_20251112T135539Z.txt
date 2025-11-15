@@ -1,8 +1,0 @@
-==== Simple Nasdaq Bot Report ====
-PnL net (USD): -816385.00
-Trades: 684 | Win rate: 21.49%
-Params -> EMA9:9 EMA21:21 SMA50:50 SMA200:200 RSI:14
-MACD(12,26,9) VMA:20 VWAP_win:105 VP_win:80
-Weights -> trend:1.40 macd:0.75 rsi:1.40 vol:2.00 vwap:2.10 poc:0.35 mtf:2.40
-Thresholds -> enter:0.90 exit:0.35
-Données: data/mnq_5m.csv
