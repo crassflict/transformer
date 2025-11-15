@@ -1,0 +1,60 @@
+name: Run bot daily
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "15 13 * * *"   # 08:15 Québec (hiver)
+
+permissions:
+  contents: write
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+
+      - name: Fetch MNQ=F (5m, 60d)
+        run: |
+          python fetch_mnq.py
+
+      - name: Run bot and save output
+        env:
+          PYTHONUNBUFFERED: "1"
+        run: |
+          mkdir -p out
+          python -u bot.py | tee out/run_$(date -u +'%Y%m%dT%H%M%SZ').txt
+
+      # 👉 NEW: installer matplotlib pour générer une image
+      - name: Install matplotlib
+        run: |
+          python -m pip install --upgrade pip
+          pip install matplotlib
+
+      # 👉 NEW: tracer le PnL et enregistrer out/performance.png
+      - name: Plot performance
+        run: |
+          python plot_results.py
+
+      - name: Update README with latest summary
+        run: |
+          python update_readme.py
+
+      - name: Commit results (state + logs + data + README + plot)
+        run: |
+          set -e
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          if git diff --cached --quiet; then
+            echo "No changes to commit."
+          else
+            git commit -m "bot run $(date -u +'%Y-%m-%dT%H:%M:%SZ')"
+            git push
+          fi
