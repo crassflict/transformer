@@ -15,15 +15,30 @@ REPORT_FILE = Path("xgb_report.txt")
 # ======================================================================
 
 print("Loading dataset...")
-X = pd.read_parquet(FEATURES_FILE)
-y = pd.read_parquet(LABELS_FILE)["label"]
 
-# On garde seulement les 4 features utilisées par l'API / C#
+# ---- Features ----
+X = pd.read_parquet(FEATURES_FILE)
+
+# On garde seulement les 4 features utilisées en live par Quantower
 FEATURE_COLUMNS = ["close", "ema_fast", "ema_slow", "rsi"]
 X = X[FEATURE_COLUMNS].copy()
 
-print(f"Shape X: {X.shape}, y: {y.shape}")
+print(f"X shape: {X.shape}")
 print("Using features:", FEATURE_COLUMNS)
+
+# ---- Labels ----
+labels_df = pd.read_parquet(LABELS_FILE)
+print("Labels columns:", list(labels_df.columns))
+
+if "label" in labels_df.columns:
+    y = labels_df["label"]
+else:
+    # Si la colonne ne s'appelle pas "label", on prend la première colonne
+    first_col = labels_df.columns[0]
+    print(f"Column 'label' not found. Using first column: {first_col}")
+    y = labels_df[first_col]
+
+print(f"y shape: {y.shape}")
 
 # ======================================================================
 # 2. Split train / test
@@ -33,7 +48,7 @@ X_train, X_test, y_train, y_test = train_test_split(
     X,
     y,
     test_size=0.2,
-    shuffle=False,  # série temporelle
+    shuffle=False,  # important pour les séries temporelles
 )
 
 # ======================================================================
