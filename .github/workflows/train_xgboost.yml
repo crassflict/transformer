@@ -18,7 +18,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install pandas pyarrow scikit-learn xgboost numpy
+          pip install pandas numpy scikit-learn pyarrow ta joblib pykalman
 
       - name: Run training script
         run: python ml_train_xgboost.py
